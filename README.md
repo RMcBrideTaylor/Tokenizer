@@ -1,6 +1,6 @@
 # Tokenizer
 
-**TODO: Add description**
+Tokenizer is a library for generating, storing and checking OAuth tokens.
 
 ## Installation
 
