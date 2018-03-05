@@ -3,7 +3,7 @@ defmodule Tokenizer.Config do
     cond do
       (adapter = Application.get_env(:tokenizer, :adapter, Tokenizer.Cache.ETS) && Enum.member?(adapter.module_info[:attributes][:behaviour], Tokenizer.Cache)) ->
         quote do
-          alias unquote(Application.get_env(:tokenizer, :adapter)) as: Cache
+          @cache unquote(Application.get_env(:tokenizer, :adapter))
         end
 
       (!Enum.member?(adapter.module_info[:attributes][:behaviour], Tokenizer.Cache)) ->

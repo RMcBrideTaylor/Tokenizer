@@ -1,5 +1,7 @@
 defmodule Tokenizer do
   use Application
+  use Tokenizer.Cache.ETS
+  use Tokenizer.Cache.MockETS
   use Tokenizer.Config
 
   ## OTP Supervisor Declarations
@@ -13,11 +15,17 @@ defmodule Tokenizer do
     ]
     cachex_opts = [strategy: :one_for_one, name: Tokenizer.Supervisor]
 
-    # Redis Process
+    # Mock Cachex/ETS Process
+    mock_cachex = [
+      worker(Tokenizer.Cache.MockETSBucket, [:tokens]),
+      worker(Tokenizer.Cache.MockETSBucket, [:refresh_tokens])
+    ]
+    mock_cachex_opts = [strategy: :one_for_one, name: Tokenizer.Supervisor]
 
     # Start required cache
     case Application.get_env(:tokenizer, :adapter, Tokenizer.Cache.ETS) do
       Tokenizer.Cache.ETS -> Supervisor.start_link(cachex, cachex_opts)
+      Tokenizer.Cache.MockETS -> Supervisor.start_link(mock_cachex, mock_cachex_opts)
     end
   end
 
@@ -31,10 +39,10 @@ defmodule Tokenizer do
     # Generate key
     key = :crypto.strong_rand_bytes(255)
 
-    if(exists?(key)) do
+    if(!exists?(key)) do
 
       expiration_time = Time.add(Time.utc_now, Application.get_env(:tokenizer, :token_expiration, 86400))
-      put(key, [client: client, user: user, scope: scope, expires_at: expiration_time])
+      put(key, %{client: client, user: user, scope: scope, expires_at: expiration_time})
 
       case generate_refresh_token(client, user, scope) do
         {:ok, refresh_token} -> {:ok, {token: key, refresh_token: refresh_token}}
@@ -56,11 +64,11 @@ defmodule Tokenizer do
   end
 
   def get(key, cache // :tokens) do
-    Cache.get(key, cache)
+    @cache.get(key, cache)
   end
 
   def valid_token?(token) do
-    case Cache.get(token, :tokens) do
+    case @cache.get(token, :tokens) do
       {:ok, _value} -> true
       _ -> false
     end
@@ -68,7 +76,7 @@ defmodule Tokenizer do
   end
 
   def valid_refresh_token?(token) do
-    case Cache.get(token, :refresh_tokens) do
+    case @cache.get(token, :refresh_tokens) do
       {:ok, _value} -> true
       _ -> false
     end
@@ -85,9 +93,9 @@ defmodule Tokenizer do
     # Generate
     refresh_token = :crypto.strong_rand_bytes(255)
 
-    if exists?(refresh_token, :refresh_tokens) do
+    if !exists?(refresh_token, :refresh_tokens) do
       expiration_time = Time.add(Time.utc_now, 2629746)
-      put(refresh_token, [client: client, user: user, scope: scope, expires_at: expiration_time], :refresh_tokens)
+      put(refresh_token, %{client: client, user: user, scope: scope, expires_at: expiration_time}, :refresh_tokens)
       {:ok, refresh_token}
     else
       generate_refresh_token(client, user, scope, depth + 1)
@@ -95,23 +103,23 @@ defmodule Tokenizer do
   end
 
   defp exists?(key, cache // :tokens) do
-    Cache.exists?(key, cache)
+    @cache.exists?(key, cache)
   end
 
   defp take(key, cache // :tokens) do
-    Cache.take(key, cache)
+    @cache.take(key, cache)
   end
 
   defp delete(key, cache // :tokens) do
-    Cache.delete(key, cache)
+    @cache.delete(key, cache)
   end
 
   defp update(key, new_value_keywordlist, cache // :tokens) do
-    Cache.update(key, new_value_keywordlist, cache)
+    @cache.update(key, new_value_keywordlist, cache)
   end
 
   defp put(key, new_value, cache // :tokens) do
-    Cache.put(key, new_value, cache)
+    @cache.put(key, new_value, cache)
   end
 
 
