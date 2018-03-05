@@ -16,7 +16,7 @@ defmodule Tokenizer.Cache.ETS do
         {:ok, nil} -> {:error, "key #{key} not found"}
         {:ok, value} -> {:ok, value}
         {:error, message} -> {:error, message}
-        _ -> raise UnexpectedBehaviourError
+        _ -> {:error, "Unexpected Behaviour"}
       end
 
     end
@@ -35,7 +35,7 @@ defmodule Tokenizer.Cache.ETS do
       {:ok, nil} -> {:error, "Could not push to #{key}"}
       {:ok, value} -> {:ok, value}
       {:error, message} -> {:error, message}
-      _ -> raise UnexpectedBehaviourError
+      _ -> {:error, "Unexpected Behaviour"}
     end
 
     if(is_integer(data[:expires_at])) do
@@ -50,14 +50,14 @@ defmodule Tokenizer.Cache.ETS do
       {:ok, nil} -> {:error, "key #{key} not found"}
       {:ok, value} -> {:ok, value}
       {:error, message} -> {:error, message}
-      _ -> raise UnexpectedBehaviourError
+      _ -> {:error, "Unexpected Behaviour"}
     end
   end
 
   def exists?(key, cache // :tokens) do
     case @cachex.exists?(cache, key) do
       {:ok, status} -> status
-      _ -> raise UnexpectedBehaviourError
+      _ -> {:error, "Unexpected Behaviour"}
     end
   end
 end
