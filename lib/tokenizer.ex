@@ -3,7 +3,12 @@ defmodule Tokenizer do
   use Tokenizer.Config
   @cache Cache
 
-  ## OTP Supervisor Declarations
+  @moduledoc """
+    This is the primary interface for the tokenizer application. It handles supervision,
+    abstracting the cache interfaces, and performing operations against the cache
+  """
+
+  @doc false
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
@@ -29,7 +34,11 @@ defmodule Tokenizer do
     end
   end
 
-  ## Interface description
+  @doc """
+    Generates a new token in the cache for a given client, user, and scope
+
+    Returns either an :ok or :error tuple message with an access / refresh token
+  """
   def generate_token(client, user, scope, depth \\ 1) when is_integer(client) and is_integer(user) do
     # Prevent inescapable loop
     unless depth < 1500 do
@@ -45,7 +54,7 @@ defmodule Tokenizer do
       expire(key, Application.get_env(:tokenizer, :token_expiration, 86400))
 
       case generate_refresh_token(client, user, scope) do
-        {:ok, refresh_token} -> {:ok, %{token: key, refresh_token: refresh_token}}
+        {:ok, refresh_token} -> {:ok, %{token: key, refresh_token: refresh_token, expires_in: Application.get_env(:tokenizer, :token_expiration, 86400)}}
         {:error, message} -> {:error, message}
         _ -> raise UnexpectedBehaviourError
       end
@@ -54,24 +63,36 @@ defmodule Tokenizer do
     end
   end
 
-  def refresh_token(refresh_token) do
+
+  @doc """
+    Generates a new token in the cache from an existing refresh token
+
+    Returns either an :ok or :error tuple message with an access / refresh token
+  """
+  def refresh_token(refresh_token) when is_bitstring(refresh_token) do
     case take(refresh_token, :refresh_tokens) do
-      {:ok, nil} -> {:error, "token #{refresh_token} does not exist"}
+      {:ok, nil} -> {:error, "Token does not exist."}
       {:ok, body} -> generate_token(body[:client], body[:user], body[:scope])
       {:error, _message} -> {:error, "error finding token in cache"}
       _ -> raise UnexpectedBehaviourError
     end
   end
 
-  def get(key, cache \\ :tokens) do
+  @doc """
+    Fetches a cache entry associated with a token string
+
+    Returns either an :ok or :error tuple message with an access / refresh token
+  """
+  def get(key, cache \\ :tokens) when is_bitstring(key) and is_atom(cache) do
     @cache.get(key, cache)
   end
 
-  def expire(key, time_in_seconds, cache \\ :tokens) do
-    @cache.expire(key, time_in_seconds, cache)
-  end
+  @doc """
+    Checks that a cache entry exists for a given token
 
-  def valid_token?(token) do
+    Returns either true or false
+  """
+  def valid_token?(token) when is_bitstring(token) do
     case @cache.get(token, :tokens) do
       {:ok, _value} -> true
       _ -> false
@@ -79,15 +100,20 @@ defmodule Tokenizer do
 
   end
 
-  def valid_refresh_token?(token) do
+  @doc """
+    Checks that a cache entry exists for a given refresh token
+
+    Returns either true or false
+  """
+  def valid_refresh_token?(token) when is_bitstring(token) do
     case @cache.get(token, :refresh_tokens) do
       {:ok, _value} -> true
       _ -> false
     end
   end
 
-
   # Helper methods
+  @doc false
   defp generate_refresh_token(client, user, scope, depth \\ 1) when is_integer(client) and is_integer(user) do
     # Prevent inescapable loop
     unless depth < 1500 do
@@ -106,25 +132,34 @@ defmodule Tokenizer do
     end
   end
 
-  defp exists?(key, cache \\ :tokens) do
+  @doc false
+  defp expire(key, time_in_seconds, cache \\ :tokens) when is_bitstring(key) and is_integer(time_in_seconds) and is_atom(cache) do
+    @cache.expire(key, time_in_seconds, cache)
+  end
+
+  @doc false
+  defp exists?(key, cache \\ :tokens) when is_bitstring(key) and is_atom(cache) do
     @cache.exists?(key, cache)
   end
 
-  defp take(key, cache \\ :tokens) do
+  @doc false
+  defp take(key, cache \\ :tokens) when is_bitstring(key) and is_atom(cache) do
     @cache.take(key, cache)
   end
 
-  defp delete(key, cache \\ :tokens) do
+  @doc false
+  defp delete(key, cache \\ :tokens) when is_bitstring(key) and is_atom(cache) do
     @cache.delete(key, cache)
   end
 
-  defp update(key, new_value_map, cache \\ :tokens) do
-    @cache.update(key, new_value_map, cache)
-  end
-
-  defp put(key, new_value, cache \\ :tokens) do
+  @doc false
+  defp put(key, new_value, cache \\ :tokens) when is_bitstring(key) and is_atom(cache) do
     @cache.put(key, new_value, cache)
   end
 
+  @doc false
+  defp update(key, new_value_map, cache \\ :tokens) when is_bitstring(key) and is_map(new_value_map) and is_atom(cache) do
+    @cache.update(key, new_value_map, cache)
+  end
 
 end

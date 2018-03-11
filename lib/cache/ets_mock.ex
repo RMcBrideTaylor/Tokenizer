@@ -51,15 +51,13 @@ defmodule Tokenizer.Cache.MockETS do
       if(Map.has_key?(set, key)) do
         updated_obj = set[key]
 
-        Map.to_list(data_list) |> Enum.each(fn x ->
-          map_key = Atom.to_string(elem(x,0))
-          value = elem(x,1)
-
-          if(Map.has_key?(updated_obj, map_key)) do
-            updated_obj = Map.put(updated_obj, map_key, value)
+        updated_obj = Enum.reduce updated_obj, %{}, fn {key, value}, total ->
+          if(Map.has_key?(data_list, key)) do
+            Map.put(total, key, data_list[key])
+          else
+            Map.put(total, key, value )
           end
-        end)
-
+        end
         {updated_obj, Map.put(set, key, updated_obj)}
       else
         {nil, set}

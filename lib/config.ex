@@ -1,4 +1,5 @@
 defmodule Tokenizer.Config do
+  @moduledoc false
   defmacro __using__(_) do
     adapter = Application.get_env(:tokenizer, :adapter, Tokenizer.Cache.ETS)
     cond do

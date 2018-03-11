@@ -32,26 +32,40 @@ defmodule Tokenizer.Cache.ETS do
     #TODO
 
     # Get request
+    case get(key, cache) do
+      {:ok, data} ->
+        if is_map(data_list) and is_map(data) do
 
-    # Modify
+          new_data = Enum.reduce data, %{}, fn {key, value}, total ->
+            if(Map.has_key?(data_list, key)) do
+              Map.put(total, key, data_list[key])
+            else
+              Map.put(total, key, value)
+            end
+          end
 
-    # Put
-    @cachex
-  end
+          IO.inspect(put(key, new_data, cache))
+           case put(key, new_data, cache) do
+             {:ok, response} -> {:ok, response}
+             {:error, message} -> {:error, message}
+             _ -> {:error, "Unexpected Behaviour"}
+           end
 
-  def put(key, data, cache \\ :tokens) do
-    response = case @cachex.put(cache, key, data) do
-      {:ok, nil} -> {:error, "Could not push to #{key}"}
-      {:ok, value} -> {:ok, value}
+        else
+          {:error, "Input and destination must both be type map"}
+        end
       {:error, message} -> {:error, message}
       _ -> {:error, "Unexpected Behaviour"}
     end
+  end
 
-    if(is_integer(data[:expires_at])) do
-      @cachex.expire_at(cache, key, data[:expires_at])
+  def put(key, data, cache \\ :tokens) do
+    case @cachex.put(cache, key, data) do
+      {:ok, nil} -> {:error, "Could not push to #{key}"}
+      {:ok, true} -> {:ok, data}
+      {:error, message} -> {:error, message}
+      _ -> {:error, "Unexpected Behaviour"}
     end
-
-    response
   end
 
   def take(key, cache \\ :tokens) do
