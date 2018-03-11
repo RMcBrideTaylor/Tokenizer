@@ -1,11 +1,10 @@
 # Cachex-based interface to ETS
 defmodule Tokenizer.Cache.ETS do
-  use Cachex
 
   @behaviour Tokenizer.Cache
-  @cache Cachex
+  @cachex Cachex
 
-  def get(key, cache // :tokens) do
+  def get(key, cache \\ :tokens) do
 
     unless @cachex.ttl(cache, key) > 0 do
       delete(cache, key)
@@ -22,15 +21,16 @@ defmodule Tokenizer.Cache.ETS do
     end
   end
 
-  def delete(key, cache // :tokens) do
+  def delete(key, cache \\ :tokens) do
     @cachex.del(cache, key)
   end
 
-  def update(key, data, cache // :tokens) do
-    @cachex #TODO
+  def update(key, data_list, cache \\ :tokens) do
+    #TODO
+    @cachex
   end
 
-  def put(key, data, cache // :tokens) do
+  def put(key, data, cache \\ :tokens) do
     response = case @cachex.put(cache, key, data) do
       {:ok, nil} -> {:error, "Could not push to #{key}"}
       {:ok, value} -> {:ok, value}
@@ -39,13 +39,13 @@ defmodule Tokenizer.Cache.ETS do
     end
 
     if(is_integer(data[:expires_at])) do
-      @cachex.expires_at(cache, key, data[:expires_at])
+      @cachex.expire_at(cache, key, data[:expires_at])
     end
 
     response
   end
 
-  def take(key, cache // :tokens) do
+  def take(key, cache \\ :tokens) do
     case @cachex.take(cache, key) do
       {:ok, nil} -> {:error, "key #{key} not found"}
       {:ok, value} -> {:ok, value}
@@ -54,7 +54,7 @@ defmodule Tokenizer.Cache.ETS do
     end
   end
 
-  def exists?(key, cache // :tokens) do
+  def exists?(key, cache \\ :tokens) do
     case @cachex.exists?(cache, key) do
       {:ok, status} -> status
       _ -> {:error, "Unexpected Behaviour"}

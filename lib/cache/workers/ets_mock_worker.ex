@@ -1,8 +1,8 @@
 defmodule Tokenizer.Cache.MockETSBucket do
-  use Genserver
+  use Agent
 
   def start_link(opts) do
-    Agent.start_link(fn -> MapSet.new end, name: opts[1])
+    Agent.start_link(fn -> Map.new end, name: opts)
   end
 
 end

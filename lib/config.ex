@@ -1,9 +1,10 @@
 defmodule Tokenizer.Config do
   defmacro __using__(_) do
+    adapter = Application.get_env(:tokenizer, :adapter, Tokenizer.Cache.ETS)
     cond do
-      (adapter = Application.get_env(:tokenizer, :adapter, Tokenizer.Cache.ETS) && Enum.member?(adapter.module_info[:attributes][:behaviour], Tokenizer.Cache)) ->
+      (adapter && Enum.member?(adapter.module_info[:attributes][:behaviour], Tokenizer.Cache)) ->
         quote do
-          @cache unquote(Application.get_env(:tokenizer, :adapter))
+          alias unquote(adapter), as: Cache
         end
 
       (!Enum.member?(adapter.module_info[:attributes][:behaviour], Tokenizer.Cache)) ->
