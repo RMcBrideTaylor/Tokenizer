@@ -14,7 +14,8 @@ defmodule Tokenizer.Cache.ETS do
       case @cachex.get(cache, key) do
         {:ok, nil} ->  {:error, "key #{key} not found"}
         {:ok, value} ->
-          unless @cachex.ttl(cache, key) > 0 do
+          {status, time} = @cachex.ttl(cache, key)
+          unless time > 0 do
             delete(cache, key)
             response = {:error, "Token has expired"}
           else
@@ -24,6 +25,10 @@ defmodule Tokenizer.Cache.ETS do
         _ -> {:error, "Unexpected Behaviour"}
       end
     end
+  end
+
+  def expire(key, time_in_seconds, cache \\ :tokens) do
+    @cachex.expire(cache, key, :timer.seconds(time_in_seconds))
   end
 
   def delete(key, cache \\ :tokens) do

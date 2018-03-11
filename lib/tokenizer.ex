@@ -41,8 +41,8 @@ defmodule Tokenizer do
 
     if(!exists?(key)) do
 
-      expiration_time = Time.add(Time.utc_now, Application.get_env(:tokenizer, :token_expiration, 86400))
-      put(key, %{client: client, user: user, scope: scope, expires_at: expiration_time})
+      put(key, %{client: client, user: user, scope: scope})
+      expire(key, Application.get_env(:tokenizer, :token_expiration, 86400))
 
       case generate_refresh_token(client, user, scope) do
         {:ok, refresh_token} -> {:ok, %{token: key, refresh_token: refresh_token}}
@@ -65,6 +65,10 @@ defmodule Tokenizer do
 
   def get(key, cache \\ :tokens) do
     @cache.get(key, cache)
+  end
+
+  def expire(key, time_in_seconds, cache \\ :tokens) do
+    @cache.expire(key, time_in_seconds, cache)
   end
 
   def valid_token?(token) do
@@ -94,8 +98,8 @@ defmodule Tokenizer do
     refresh_token = :crypto.strong_rand_bytes(255) |> Base.url_encode64 |> binary_part(0, 255)
 
     if !exists?(refresh_token, :refresh_tokens) do
-      expiration_time = Time.add(Time.utc_now, Application.get_env(:tokenizer, :refresh_token_expiration, 86400))
-      put(refresh_token, %{client: client, user: user, scope: scope, expires_at: expiration_time}, :refresh_tokens)
+      put(refresh_token, %{client: client, user: user, scope: scope}, :refresh_tokens)
+      expire(refresh_token, Application.get_env(:tokenizer, :refresh_token_expiration, 86400), :refresh_tokens)
       {:ok, refresh_token}
     else
       generate_refresh_token(client, user, scope, depth + 1)

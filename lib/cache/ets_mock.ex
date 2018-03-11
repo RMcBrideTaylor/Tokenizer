@@ -26,6 +26,14 @@ defmodule Tokenizer.Cache.MockETS do
     end
   end
 
+  def expire(key, time_in_seconds, cache \\ :tokens) do
+    Agent.get_and_update(cache, fn set ->
+      Map.get_and_update(set, key, fn data ->
+        {data, Map.merge(data, %{expires_at: Time.add(Time.utc_now, time_in_seconds)})}
+      end)
+    end)
+  end
+
   def take(key, cache \\ :tokens) do
     delete(key, cache)
   end

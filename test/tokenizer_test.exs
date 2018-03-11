@@ -37,7 +37,7 @@ defmodule TokenizerTest do
 
   test "tokens expire" do
     {_code, value} = Tokenizer.generate_token(6,4,"*")
-    :timer.sleep(1200)
+    :timer.sleep(2000)
     {code, _value} = Tokenizer.get(value.token)
     assert code == :error
   end
