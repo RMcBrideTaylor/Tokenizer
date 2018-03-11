@@ -17,7 +17,12 @@ defmodule Tokenizer.Cache.MockETS do
 
     case response do
       nil -> {:error, "entry not found"}
-      response -> {:ok, response}
+      response ->
+        if (Time.diff(response.expires_at, Time.utc_now) >= 0) do
+          {:ok, response}
+        else
+          {:error, "token has expired"}
+        end
     end
   end
 

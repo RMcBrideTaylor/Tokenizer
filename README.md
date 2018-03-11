@@ -5,7 +5,7 @@ Tokenizer is a library for generating, storing and checking OAuth tokens.
 
   1. Increasing code coverage
   2. Working on eliminating duplicate cache entries
-  
+
 ## Installation
 
   1. Add tokenizer to your list of dependencies in mix.exs:

@@ -94,7 +94,7 @@ defmodule Tokenizer do
     refresh_token = :crypto.strong_rand_bytes(255) |> Base.url_encode64 |> binary_part(0, 255)
 
     if !exists?(refresh_token, :refresh_tokens) do
-      expiration_time = Time.add(Time.utc_now, 2629746)
+      expiration_time = Time.add(Time.utc_now, Application.get_env(:tokenizer, :refresh_token_expiration, 86400))
       put(refresh_token, %{client: client, user: user, scope: scope, expires_at: expiration_time}, :refresh_tokens)
       {:ok, refresh_token}
     else
