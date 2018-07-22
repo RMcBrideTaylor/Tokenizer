@@ -28,7 +28,7 @@ defmodule TokenizerTest do
   end
 
   test "old refresh token is purged after refresh" do
-    {_code, value} = Tokenizer.generate_token(5,4,"*")
+    {_code, value} = Tokenizer.generate_token(5,5,"*")
     {_new_code, _new_value} = Tokenizer.refresh_token(value.refresh_token)
 
     {code, _response} = Tokenizer.get(value.refresh_token, :refresh_tokens)
@@ -40,5 +40,13 @@ defmodule TokenizerTest do
     :timer.sleep(2000)
     {code, _value} = Tokenizer.get(value.token)
     assert code == :error
+  end
+
+  test "resource type stays constant through mutations" do
+    {_code, value} = Tokenizer.generate_token(6,4,"*", :service)
+    {_new_code, new_value} = Tokenizer.refresh_token(value.refresh_token)
+    {response, resource} = Tokenizer.get(new_value.token)
+
+    assert resource.type == :service
   end
 end

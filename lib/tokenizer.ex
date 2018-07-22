@@ -39,7 +39,7 @@ defmodule Tokenizer do
 
     Returns either an :ok or :error tuple message with an access / refresh token
   """
-  def generate_token(client, user, scope, depth \\ 1) when is_integer(client) and is_integer(user) do
+  def generate_token(client, resource, scope, type \\ :user, depth \\ 1) when is_integer(client) and is_integer(resource) and is_atom(type) do
     # Prevent inescapable loop
     unless depth < 1500 do
       {:error, "Could not generate token"}
@@ -50,16 +50,16 @@ defmodule Tokenizer do
 
     if(!exists?(key)) do
 
-      put(key, %{client: client, user: user, scope: scope})
+      put(key, %{client: client, resource: resource, scope: scope, type: type})
       expire(key, Application.get_env(:tokenizer, :token_expiration, 86400))
 
-      case generate_refresh_token(client, user, scope) do
+      case generate_refresh_token(client, resource, scope, type) do
         {:ok, refresh_token} -> {:ok, %{token: key, refresh_token: refresh_token, expires_in: Application.get_env(:tokenizer, :token_expiration, 86400)}}
         {:error, message} -> {:error, message}
         _ -> raise UnexpectedBehaviourError
       end
     else
-      generate_token(client, user, scope, depth + 1)
+      generate_token(client, resource, scope, type, depth + 1)
     end
   end
 
@@ -72,7 +72,7 @@ defmodule Tokenizer do
   def refresh_token(refresh_token) when is_bitstring(refresh_token) do
     case take(refresh_token, :refresh_tokens) do
       {:ok, nil} -> {:error, "Token does not exist."}
-      {:ok, body} -> generate_token(body[:client], body[:user], body[:scope])
+      {:ok, body} -> generate_token(body[:client], body[:resource], body[:scope], body[:type])
       {:error, _message} -> {:error, "error finding token in cache"}
       _ -> raise UnexpectedBehaviourError
     end
@@ -114,7 +114,7 @@ defmodule Tokenizer do
 
   # Helper methods
   @doc false
-  defp generate_refresh_token(client, user, scope, depth \\ 1) when is_integer(client) and is_integer(user) do
+  defp generate_refresh_token(client, resource, scope, type \\ :user, depth \\ 1) when is_integer(client) and is_integer(resource) and is_atom(type) do
     # Prevent inescapable loop
     unless depth < 1500 do
       {:error, "Could not generate refresh token"}
@@ -124,11 +124,11 @@ defmodule Tokenizer do
     refresh_token = :crypto.strong_rand_bytes(255) |> Base.url_encode64 |> binary_part(0, 255)
 
     if !exists?(refresh_token, :refresh_tokens) do
-      put(refresh_token, %{client: client, user: user, scope: scope}, :refresh_tokens)
+      put(refresh_token, %{client: client, resource: resource, scope: scope, type: type}, :refresh_tokens)
       expire(refresh_token, Application.get_env(:tokenizer, :refresh_token_expiration, 86400), :refresh_tokens)
       {:ok, refresh_token}
     else
-      generate_refresh_token(client, user, scope, depth + 1)
+      generate_refresh_token(client, resource, scope, type, depth + 1)
     end
   end
 
