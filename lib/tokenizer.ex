@@ -39,7 +39,7 @@ defmodule Tokenizer do
 
     Returns either an :ok or :error tuple message with an access / refresh token
   """
-  def generate_token(client, resource, scope, type \\ :user, depth \\ 1) when is_integer(client) and is_integer(resource) and is_atom(type) do
+  def generate_token(client, resource, scope, type \\ :user, depth \\ 1) when is_integer(resource) and is_atom(type) do
     # Prevent inescapable loop
     unless depth < 1500 do
       {:error, "Could not generate token"}
