@@ -114,7 +114,7 @@ defmodule Tokenizer do
 
   # Helper methods
   @doc false
-  defp generate_refresh_token(client, resource, scope, type \\ :user, depth \\ 1) when is_integer(client) and is_integer(resource) and is_atom(type) do
+  defp generate_refresh_token(client, resource, scope, type \\ :user, depth \\ 1) when is_integer(resource) and is_atom(type) do
     # Prevent inescapable loop
     unless depth < 1500 do
       {:error, "Could not generate refresh token"}
